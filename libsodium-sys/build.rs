@@ -146,7 +146,8 @@ fn make_libsodium(target: &str, source_dir: &Path, install_dir: &Path) -> PathBu
     use std::{fs, process::Command, str};
 
     // Decide on CC, CFLAGS and the --host configure argument
-    let build_compiler = cc::Build::new().get_compiler();
+    let cc = cc::Build::new();
+    let build_compiler = cc.get_compiler();
     let mut compiler = build_compiler.path().to_str().unwrap().to_string();
     let mut cflags = build_compiler.cflags_env().into_string().unwrap();
     let mut host_arg = format!("--host={}", target);
@@ -239,6 +240,12 @@ fn make_libsodium(target: &str, source_dir: &Path, install_dir: &Path) -> PathBu
     }
     if !cflags.is_empty() {
         configure_cmd.env("CFLAGS", &cflags);
+    }
+    if let Ok(archiver) = cc.try_get_archiver() {
+        configure_cmd.env("AR", archiver.get_program());
+    }
+    if let Ok(ranlib) = cc.try_get_ranlib() {
+        configure_cmd.env("RANLIB", ranlib.get_program());
     }
     if env::var("SODIUM_DISABLE_PIE").is_ok() {
         configure_cmd.arg("--disable-pie");
